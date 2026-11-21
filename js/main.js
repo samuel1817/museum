@@ -24,10 +24,11 @@ class QuestMuseumTest {
         this.world = new QuestTerraceWorld(this.scene);
         this.controls = new PointerLockControls(this.camera, document.body);
         this.raycaster = new THREE.Raycaster();
-        this.raycaster.far = 4.2;
+        this.raycaster.far = 4.5;
 
         this.keys = { w: false, a: false, s: false, d: false, shift: false };
         this.hoveredExhibit = null;
+        this.isPlaying = false;
 
         this.loadExhibits();
         this.bindUI();
@@ -50,29 +51,30 @@ class QuestMuseumTest {
         const hud = document.getElementById('hud');
         const inspectModal = document.getElementById('inspect-modal');
 
-        // Prepínanie kariet v Quest okne
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.onclick = () => this.switchTab(btn.dataset.tab);
         });
 
-        // Vstup do 3D pohľadu
         const enter3D = () => {
             questUI.classList.add('hidden');
             inspectModal.classList.add('hidden');
             hud.classList.remove('hidden');
-            this.controls.lock();
+            this.isPlaying = true;
+            try {
+                this.controls.lock();
+            } catch (e) {
+                console.warn('PointerLock nepodporovaný, pokračujem v režime voľnej kamery.');
+            }
         };
 
         document.getElementById('btn-enter-vr').onclick = enter3D;
         document.getElementById('dock-play').onclick = enter3D;
         document.getElementById('btn-close-inspect').onclick = enter3D;
 
-        // Dock skratky
         document.getElementById('dock-add').onclick = () => this.switchTab('tab-create');
         document.getElementById('dock-list').onclick = () => this.switchTab('tab-exhibits');
         document.getElementById('dock-settings').onclick = () => this.switchTab('tab-settings');
 
-        // Teleport karty
         document.querySelectorAll('.zone-card').forEach(card => {
             card.onclick = () => {
                 const coords = card.dataset.pos.split(',').map(Number);
@@ -81,7 +83,6 @@ class QuestMuseumTest {
             };
         });
 
-        // Formulár na pridanie vlastného exponátu
         document.getElementById('create-form').onsubmit = (e) => {
             e.preventDefault();
             const custom = JSON.parse(localStorage.getItem('quest_local_exhibits') || '[]');
@@ -99,7 +100,6 @@ class QuestMuseumTest {
             this.switchTab('tab-exhibits');
         };
 
-        // Nastavenia grafiky
         document.getElementById('opt-time').onchange = (e) => this.world.setupEnvironment(e.target.value);
         document.getElementById('opt-shadows').onchange = (e) => {
             this.renderer.shadowMap.enabled = e.target.value === 'on';
@@ -109,8 +109,8 @@ class QuestMuseumTest {
             this.loadExhibits();
         };
 
-        // Návrat do Quest Menu pri ESC
         this.controls.addEventListener('unlock', () => {
+            this.isPlaying = false;
             if (inspectModal.classList.contains('hidden')) {
                 hud.classList.add('hidden');
                 questUI.classList.remove('hidden');
@@ -138,21 +138,21 @@ class QuestMuseumTest {
 
     bindControls() {
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyW') this.keys.w = true;
-            if (e.code === 'KeyS') this.keys.s = true;
-            if (e.code === 'KeyA') this.keys.a = true;
-            if (e.code === 'KeyD') this.keys.d = true;
+            if (e.code === 'KeyW' || e.code === 'ArrowUp') this.keys.w = true;
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') this.keys.s = true;
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') this.keys.a = true;
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') this.keys.d = true;
             if (e.code === 'ShiftLeft') this.keys.shift = true;
-            if (e.code === 'KeyE' && this.controls.isLocked && this.hoveredExhibit) {
+            if (e.code === 'KeyE' && this.isPlaying && this.hoveredExhibit) {
                 this.openInspect(this.hoveredExhibit);
             }
         });
 
         document.addEventListener('keyup', (e) => {
-            if (e.code === 'KeyW') this.keys.w = false;
-            if (e.code === 'KeyS') this.keys.s = false;
-            if (e.code === 'KeyA') this.keys.a = false;
-            if (e.code === 'KeyD') this.keys.d = false;
+            if (e.code === 'KeyW' || e.code === 'ArrowUp') this.keys.w = false;
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') this.keys.s = false;
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') this.keys.a = false;
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') this.keys.d = false;
             if (e.code === 'ShiftLeft') this.keys.shift = false;
         });
 
@@ -164,6 +164,7 @@ class QuestMuseumTest {
     }
 
     openInspect(data) {
+        this.isPlaying = false;
         this.controls.unlock();
         document.getElementById('hud').classList.add('hidden');
         document.getElementById('ins-author').textContent = `Autor: ${data.author}`;
@@ -182,17 +183,15 @@ class QuestMuseumTest {
         requestAnimationFrame(() => this.animate());
         const delta = Math.min(this.clock.getDelta(), 0.1);
 
-        // Rotácia artefaktov
         this.world.animatedMeshes.forEach(m => { m.rotation.y += delta * 0.7; });
 
-        if (this.controls.isLocked) {
+        if (this.controls.isLocked || this.isPlaying) {
             const speed = this.keys.shift ? 9.0 : 4.8;
             if (this.keys.w) this.controls.moveForward(speed * delta);
             if (this.keys.s) this.controls.moveForward(-speed * delta);
             if (this.keys.d) this.controls.moveRight(speed * delta);
             if (this.keys.a) this.controls.moveRight(-speed * delta);
 
-            // Udržanie hráča na terase (polomer max 20m)
             const dist = Math.hypot(this.camera.position.x, this.camera.position.z);
             if (dist > 20) {
                 const angle = Math.atan2(this.camera.position.z, this.camera.position.x);
@@ -200,13 +199,12 @@ class QuestMuseumTest {
                 this.camera.position.z = Math.sin(angle) * 20;
             }
 
-            // Raycast na podstavce
             this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
             const hits = this.raycaster.intersectObjects(this.world.interactables, false);
             const prompt = document.getElementById('prompt');
 
             if (hits.length > 0) {
-                this.hoveredExhibit = hits.userData;
+                this.hoveredExhibit = hits[0].object.userData;
                 prompt.classList.remove('hidden');
             } else {
                 this.hoveredExhibit = null;
@@ -218,4 +216,6 @@ class QuestMuseumTest {
     }
 }
 
-new QuestMuseumTest();
+window.addEventListener('DOMContentLoaded', () => {
+    new QuestMuseumTest();
+});
