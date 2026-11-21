@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUEST 3 | Virtuálne Múzeum (Lokálny Test)</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com",
+                "three/addons/": "https://unpkg.com"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <!-- Meta Quest 3 Plávajúce Spatial Menu -->
+    <div id="quest-ui" class="spatial-overlay">
+        <div class="quest-window">
+            <!-- Ľavý navigačný panel -->
+            <aside class="quest-sidebar">
+                <div class="user-profile">
+                    <div class="avatar">Q3</div>
+                    <div>
+                        <div class="welcome">Vitajte späť</div>
+                        <div class="username">Návštevník</div>
+                    </div>
+                </div>
+                <nav class="nav-list">
+                    <button class="nav-btn active" data-tab="tab-home">Domov</button>
+                    <button class="nav-btn" data-tab="tab-create">+ Vytvoriť exponát</button>
+                    <button class="nav-btn" data-tab="tab-exhibits">Zoznam exponátov</button>
+                    <button class="nav-btn" data-tab="tab-settings">Grafika & Nastavenia</button>
+                </nav>
+            </aside>
+
+            <!-- Pravý hlavný obsah -->
+            <main class="quest-content">
+                <!-- TAB 1: DOMOV -->
+                <section id="tab-home" class="tab-panel active">
+                    <div class="hero-banner">
+                        <div class="hero-info">
+                            <span class="pill">META QUEST HOME EDITION</span>
+                            <h1>SUNSET TERRACE MUSEUM</h1>
+                            <p>Prechádzajte sa po otvorenej vyhliadkovej terase, skúmajte artefakty a pridávajte vlastné 3D diela.</p>
+                            <button id="btn-enter-vr" class="quest-primary-btn">Vstúpiť do 3D priestoru</button>
+                        </div>
+                    </div>
+
+                    <h3 class="section-title">Rýchly presun do zón (Teleport)</h3>
+                    <div class="cards-row">
+                        <div class="zone-card" data-pos="0,1.7,5">
+                            <div class="card-thumb" style="background: linear-gradient(135deg, #f4a261, #e76f51);">🌅</div>
+                            <div class="card-label">Centrálna terasa</div>
+                        </div>
+                        <div class="zone-card" data-pos="-10,1.7,-6">
+                            <div class="card-thumb" style="background: linear-gradient(135deg, #4361ee, #3a0ca3);">🚀</div>
+                            <div class="card-label">Vesmír a Veda</div>
+                        </div>
+                        <div class="zone-card" data-pos="10,1.7,-6">
+                            <div class="card-thumb" style="background: linear-gradient(135deg, #2a9d8f, #264653);">🏛️</div>
+                            <div class="card-label">Antika a Umenie</div>
+                        </div>
+                        <div class="zone-card" data-pos="0,1.7,-14">
+                            <div class="card-thumb" style="background: linear-gradient(135deg, #b5838d, #6d597a);">✨</div>
+                            <div class="card-label">Komunitná galéria</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 2: VYTVORIŤ EXPONÁT -->
+                <section id="tab-create" class="tab-panel">
+                    <h2>Pridať vlastný exponát na podstavec</h2>
+                    <p class="muted">Vytvorený objekt sa okamžite objaví na voľnom podstavci v Komunitnej galérii.</p>
+                    <form id="create-form" class="quest-form">
+                        <input type="text" id="in-title" placeholder="Názov diela (napr. Kryštál úsvitu)" required maxlength="35">
+                        <input type="text" id="in-author" placeholder="Autor (napr. Ján)" maxlength="25">
+                        <div class="form-split">
+                            <select id="in-shape">
+                                <option value="torusKnot">Tvar: Energetický uzol</option>
+                                <option value="octahedron">Tvar: Kryštál (Oktaéder)</option>
+                                <option value="icosahedron">Tvar: Sférický minerál</option>
+                                <option value="dodecahedron">Tvar: Dodekaéder</option>
+                                <option value="cone">Tvar: Zlatý obelisk</option>
+                            </select>
+                            <input type="color" id="in-color" value="#00b4d8" title="Farba objektu">
+                        </div>
+                        <textarea id="in-desc" rows="3" placeholder="Popis exponátu a jeho význam..." required maxlength="200"></textarea>
+                        <button type="submit" class="quest-primary-btn">Umiestniť do múzea</button>
+                    </form>
+                </section>
+
+                <!-- TAB 3: ZOZNAM EXPONÁTOV -->
+                <section id="tab-exhibits" class="tab-panel">
+                    <h2>Všetky exponáty v múzeu</h2>
+                    <div id="exhibits-list" class="exhibits-list"></div>
+                </section>
+
+                <!-- TAB 4: NASTAVENIA -->
+                <section id="tab-settings" class="tab-panel">
+                    <h2>Grafika a ovládanie</h2>
+                    <div class="setting-item">
+                        <span>Denná doba / Atmosféra</span>
+                        <select id="opt-time">
+                            <option value="sunset" selected>Západ slnka (Quest Home)</option>
+                            <option value="night">Hviezdna noc</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <span>Tiene a kvalita</span>
+                        <select id="opt-shadows">
+                            <option value="on" selected>Zapnuté (Vysoká)</option>
+                            <option value="off">Vypnuté (Rýchla)</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <span>Vymazať vlastné exponáty</span>
+                        <button id="btn-clear-custom" class="danger-btn">Resetovať galériu</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Spodný Meta Quest Dock -->
+        <div class="quest-dock">
+            <button id="dock-play" title="Spustiť 3D pohľad">▶️</button>
+            <button id="dock-add" title="Pridať exponát">➕</button>
+            <button id="dock-list" title="Zoznam exponátov">🏛️</button>
+            <button id="dock-settings" title="Nastavenia">⚙️</button>
+        </div>
+    </div>
+
+    <!-- Okno detailu exponátu pri stlačení E -->
+    <div id="inspect-modal" class="spatial-overlay hidden">
+        <div class="inspect-card">
+            <span id="ins-author" class="pill">Autor</span>
+            <h2 id="ins-title">Názov</h2>
+            <p id="ins-desc">Popis</p>
+            <button id="btn-close-inspect" class="quest-primary-btn">Pokračovať v prehliadke (E / ESC)</button>
+        </div>
+    </div>
+
+    <!-- HUD v 3D režime -->
+    <div id="hud" class="hidden">
+        <div class="hud-bar">
+            <span><strong>WASD</strong> Pohyb | <strong>Shift</strong> Beh | <strong>Myš</strong> Rozhliadanie | <strong>ESC</strong> Quest Menu</span>
+        </div>
+        <div class="crosshair"></div>
+        <div id="prompt" class="prompt hidden">Stlačte <strong>[E]</strong> alebo kliknite pre detail</div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>
